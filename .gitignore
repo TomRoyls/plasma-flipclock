@@ -4,6 +4,7 @@ reference/
 # Render harness output
 tools/out/
 *.render.png
+dist/
 
 # Python
 __pycache__/

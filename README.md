@@ -5,17 +5,20 @@ classic HTC Sense clock.
 
 ![Flip Clock with weather](docs/demo.gif)
 
+## Requirements
+
+Plasma 6.7 or newer.
+
 ## Install
 
-```bash
-kpackagetool6 --type Plasma/Applet --install ./package
-```
-
-Add **Flip Clock** as a desktop widget. To update an existing installation:
+Download the `.plasmoid` file from a release, then run:
 
 ```bash
-kpackagetool6 --type Plasma/Applet --upgrade ./package
+kpackagetool6 --type Plasma/Applet --install ./io.github.pruefsumme.flipclock-0.1.0.plasmoid
 ```
+
+Add **Flip Clock** as a desktop widget. To update an existing installation,
+replace `--install` with `--upgrade`.
 
 ## Highlights
 
@@ -51,5 +54,5 @@ same location once in Flip Clock if needed.
 
 ## License
 
-GPL-3.0-or-later. The bundled Roboto Condensed font is licensed under the SIL
-Open Font License 1.1; see [LICENSE.txt](package/contents/fonts/LICENSE.txt).
+[AGPL-3.0-or-later](LICENSE). The bundled Roboto Condensed font remains under
+the SIL Open Font License 1.1; see [LICENSE.txt](package/contents/fonts/LICENSE.txt).

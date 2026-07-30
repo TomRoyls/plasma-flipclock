@@ -40,8 +40,8 @@ tools/pixdiff.py tools/out/render.png --write-diff tools/out/diff.png
 - Prefer `Read`/`Edit` over shell `sed` for QML and Python edits here — several
   files contain regex-hostile characters (gradient hex literals, `[wght]` in font
   filenames, QML binding braces).
-- `tools/out/` and `reference/` are gitignored. A committed screenshot lives at
-  `docs/screenshot.png`.
+- `tools/out/` and `reference/` are gitignored. The committed README animation
+  lives at `docs/demo.gif`.
 - The user is direct and technical, wants honest reporting of residual error, and
   wants honest reporting of residual error. State what is approximated and why
   rather than rounding up to "pixel-perfect".

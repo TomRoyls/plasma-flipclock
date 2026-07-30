@@ -27,11 +27,6 @@ Item {
     property bool showPanel: true
     property bool showStrips: true
 
-    // Read-only handles for the deterministic documentation capture harness.
-    // They do not participate in normal applet operation.
-    property alias hourCardItem: hourCard
-    property alias minuteCardItem: minuteCard
-
     // weather (fed by the Plasma wrapper in main.qml)
     property bool hasWeather: false
     property string wxLocation: ""
