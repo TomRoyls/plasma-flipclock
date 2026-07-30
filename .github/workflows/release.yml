@@ -1,0 +1,66 @@
+name: Release plasmoid
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Package and publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the latest main commit
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Read release metadata
+        shell: bash
+        run: |
+          version="$(sed -n 's/^[[:space:]]*"Version":[[:space:]]*"\([^"]*\)".*/\1/p' package/metadata.json)"
+          plugin_id="$(sed -n 's/^[[:space:]]*"Id":[[:space:]]*"\([^"]*\)".*/\1/p' package/metadata.json)"
+          commit="$(git rev-parse HEAD)"
+          test -n "$version"
+          test -n "$plugin_id"
+          printf 'VERSION=%s\n' "$version" >> "$GITHUB_ENV"
+          printf 'PLUGIN_ID=%s\n' "$plugin_id" >> "$GITHUB_ENV"
+          printf 'RELEASE_COMMIT=%s\n' "$commit" >> "$GITHUB_ENV"
+
+      - name: Build the plasmoid archive
+        working-directory: package
+        shell: bash
+        run: |
+          mkdir -p ../dist
+          zip -r "../dist/${PLUGIN_ID}-${VERSION}.plasmoid" .
+
+      - name: Validate the release artifact
+        shell: bash
+        run: |
+          artifact="dist/${PLUGIN_ID}-${VERSION}.plasmoid"
+          unzip -Z1 "$artifact" | sort
+          unzip -Z1 "$artifact" | grep -qx 'metadata.json'
+          unzip -Z1 "$artifact" | grep -qx 'contents/ui/main.qml'
+          if unzip -Z1 "$artifact" | grep -Eq '(^|/)reference(/|$)|(^|/)\.git(/|$)'; then
+            echo 'Refusing to release an archive containing local reference or Git files.' >&2
+            exit 1
+          fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag="v${VERSION}"
+          artifact="dist/${PLUGIN_ID}-${VERSION}.plasmoid"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists. Bump KPlugin.Version on main before publishing another release." >&2
+            exit 1
+          fi
+          gh release create "$tag" "$artifact" \
+            --target "$RELEASE_COMMIT" \
+            --title "Flip Clock ${VERSION}" \
+            --generate-notes
