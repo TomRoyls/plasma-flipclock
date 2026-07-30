@@ -27,12 +27,14 @@ Item {
     property bool showPanel: true
     property bool showStrips: true
 
-    // weather (blank until Phase 2 wires up the data source)
+    // weather (fed by the Plasma wrapper in main.qml)
     property bool hasWeather: false
     property string wxLocation: ""
     property string wxCondition: ""
     property string wxTemperature: ""
     property string wxRange: ""
+    property string wxIcon: ""
+    property string wxVariationKey: ""
 
     implicitWidth: S.REF_W
     implicitHeight: S.REF_H
@@ -113,22 +115,9 @@ Item {
                 }
             }
 
-            // A brighter, more opaque lip along the top edge (alpha ~0.85 decaying
-            // to the body's 0.5 over ~6 units). It sits outside the body's opacity
-            // so it can exceed it.
-            Rectangle {
-                width: parent.width
-                height: 7 * scene.u
-                radius: S.PANEL_RADIUS * scene.u
-                antialiasing: true
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.00; color: Qt.rgba(1, 1, 1, 0.63) }
-                    GradientStop { position: 0.30; color: Qt.rgba(1, 1, 1, 0.85) }
-                    GradientStop { position: 0.60; color: Qt.rgba(1, 1, 1, 0.68) }
-                    GradientStop { position: 1.00; color: Qt.rgba(1, 1, 1, 0.51) }
-                }
-            }
+            // The body supplies the panel edge.  A second opaque white "lip"
+            // looked like a stray horizontal rule on translucent desktop
+            // backgrounds, particularly when the widget is scaled down.
         }
 
         // ---- hours
@@ -159,7 +148,7 @@ Item {
         // These are drawn over the cards and deliberately do NOT flip, which is
         // how the original does it too.
         Text {
-            visible: scene.showStrips && text.length > 0
+            visible: scene.showStrips && !scene.hasWeather && text.length > 0
             x: S.DATE_X * scene.u
             y: S.DATE_Y * scene.u
             text: scene.dateText
@@ -169,7 +158,7 @@ Item {
         }
 
         Text {
-            visible: scene.showStrips && text.length > 0
+            visible: scene.showStrips && !scene.hasWeather && text.length > 0
             x: 0
             y: S.ALARM_Y * scene.u
             width: S.ALARM_X * scene.u
@@ -185,9 +174,21 @@ Item {
             anchors.fill: parent
             visible: scene.hasWeather
 
+            WeatherIcon {
+                x: (S.WX_ICON_CX - S.WX_ICON_W / 2) * scene.u
+                y: (S.WX_ICON_CY - S.WX_ICON_H / 2) * scene.u
+                width: S.WX_ICON_W * scene.u
+                height: S.WX_ICON_H * scene.u
+                conditionIcon: scene.wxIcon
+                variationKey: scene.wxVariationKey
+                animate: scene.animate
+            }
+
             Text {
                 x: S.WX_LOCATION_X * scene.u
                 y: S.WX_LOCATION_Y * scene.u
+                width: S.WX_LEFT_W * scene.u
+                elide: Text.ElideRight
                 text: scene.wxLocation
                 color: S.grey(S.WX_TEXT_COLOR, S.WX_TEXT_ALPHA)
                 font.pixelSize: Math.round(S.WX_LOCATION_SIZE * scene.u)
@@ -197,6 +198,8 @@ Item {
             Text {
                 x: S.WX_CONDITION_X * scene.u
                 y: S.WX_CONDITION_Y * scene.u
+                width: S.WX_LEFT_W * scene.u
+                elide: Text.ElideRight
                 text: scene.wxCondition
                 color: S.grey(S.WX_TEXT_COLOR, S.WX_TEXT_ALPHA)
                 font.pixelSize: Math.round(S.WX_CONDITION_SIZE * scene.u)
@@ -222,6 +225,7 @@ Item {
                 text: scene.wxRange
                 color: S.grey(S.WX_TEXT_COLOR, S.WX_TEXT_ALPHA)
                 font.pixelSize: Math.round(S.WX_RANGE_SIZE * scene.u)
+                lineHeight: 1.0
                 renderType: Text.CurveRendering
             }
         }

@@ -160,25 +160,32 @@ var ALARM_Y = 374
 var WX_TEXT_COLOR = "#ffffff"
 var WX_TEXT_ALPHA = 0.98
 
-var WX_LOCATION_X = 36
+// These four text anchors come directly from the 996x566 theme manifest. Keep
+// them in reference space: the deliberately oversized temperature is part of
+// the original lower-panel hierarchy.
+var WX_LOCATION_X = 55
 var WX_LOCATION_Y = 452
-var WX_LOCATION_SIZE = 32
+var WX_LOCATION_SIZE = 36
 
-var WX_CONDITION_X = 36
+var WX_CONDITION_X = 55
 var WX_CONDITION_Y = 502
-var WX_CONDITION_SIZE = 34
+var WX_CONDITION_SIZE = 36
+var WX_LEFT_W = 360
 
-var WX_TEMP_X = 840         // right-aligned
-var WX_TEMP_Y = 440
-var WX_TEMP_SIZE = 100
+var WX_TEMP_X = 815         // right-aligned, leaving room for the H/L stack
+var WX_TEMP_Y = 446
+var WX_TEMP_SIZE = 92
 
-var WX_RANGE_X = 960        // right-aligned
-var WX_RANGE_Y = 482
-var WX_RANGE_SIZE = 34
+var WX_RANGE_X = 940        // right-aligned
+var WX_RANGE_Y = 453
+var WX_RANGE_SIZE = 30
 
-// Weather sprites are centred here in the panel.
+// WeatherIcon composes independently cropped textures inside this slot. Its
+// centre is slightly above the text baseline, as in the Sense reference.
 var WX_ICON_CX = 498
-var WX_ICON_CY = 440
+var WX_ICON_CY = 425
+var WX_ICON_W = 440
+var WX_ICON_H = 320
 var WX_ENTRY_MS = 750       // drift-in + fade for every sprite
 
 // ------------------------------------------------------------------- helpers

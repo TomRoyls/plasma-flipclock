@@ -4,8 +4,8 @@ pragma ComponentBehavior: Bound
  * FlipCard.qml — one two-digit card (HH or MM) and its flip.
  *
  * The original flips the WHOLE card as one panel, not each digit separately:
- * manifest.xml drives both hour digits from ho1/ho2 and both minute digits from
- * mi3/mi4, so the hour card turns on the hour and the minute card on the minute.
+ * both hour digits live on one panel and both minute digits on another, so the
+ * hour card turns on the hour and the minute card on the minute.
  *
  * Four layers, exactly as the original composes them:
  *   static upper   NEW digits, revealed as the flap falls away
