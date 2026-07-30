@@ -27,12 +27,28 @@
       <default>true</default>
     </entry>
     <entry name="showDateStrip" type="Bool">
-      <label>Print the date on the lower strip of the hour card.</label>
+      <label>Show the date on the card when weather is hidden.</label>
       <default>true</default>
     </entry>
+    <entry name="showWeather" type="Bool">
+      <label>Show a weather readout from a configured Plasma weather source.</label>
+      <default>true</default>
+    </entry>
+    <entry name="weatherUseAutomaticSource" type="Bool">
+      <label>Reuse an active compatible Plasma weather source when available.</label>
+      <default>true</default>
+    </entry>
+    <entry name="weatherSource" type="String">
+      <label>Canonical Plasma weather source selected by the widget.</label>
+      <default></default>
+    </entry>
+    <entry name="weatherLocation" type="String">
+      <label>User-facing name of the weather location selected by the widget.</label>
+      <default></default>
+    </entry>
     <entry name="dateFormat" type="String">
-      <label>Qt date format for the date strip.</label>
-      <default>ddd d MM yyyy</default>
+      <label>Qt date format for the date display.</label>
+      <default>ddd, MMM d</default>
     </entry>
     <entry name="rightStripText" type="String">
       <label>Free text printed on the lower strip of the minute card.</label>
