@@ -1,0 +1,28 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "bastianeek@gmail.com",
+                "Name": "Bastian"
+            }
+        ],
+        "Category": "Date and Time",
+        "Description": "Skeuomorphic flip clock with weather, in the style of the HTC Sense desk clock",
+        "EnabledByDefault": true,
+        "Icon": "clock",
+        "Id": "io.github.pruefsumme.flipclock",
+        "License": "GPL-3.0-or-later",
+        "Name": "Flip Clock",
+        "Version": "0.1.0",
+        "Website": "https://github.com/pruefsumme/plasma-flipclock"
+    },
+    "FormFactors": [
+        "desktop"
+    ],
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": [
+        "org.kde.plasma.time",
+        "org.kde.plasma.date"
+    ]
+}

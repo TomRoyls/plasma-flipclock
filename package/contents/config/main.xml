@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
+  <kcfgfile name=""/>
+
+  <group name="Appearance">
+    <entry name="use24hFormat" type="Bool">
+      <label>Show the hour in 24-hour format.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showLeadingZero" type="Bool">
+      <label>Pad hours below ten with a leading zero, as the original does.</label>
+      <default>true</default>
+    </entry>
+    <entry name="timeZone" type="String">
+      <label>IANA time zone id. Empty follows the system time zone.</label>
+      <default></default>
+    </entry>
+    <entry name="animationsEnabled" type="Bool">
+      <label>Animate the card flip.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showPanel" type="Bool">
+      <label>Draw the translucent panel behind the cards.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showDateStrip" type="Bool">
+      <label>Print the date on the lower strip of the hour card.</label>
+      <default>true</default>
+    </entry>
+    <entry name="dateFormat" type="String">
+      <label>Qt date format for the date strip.</label>
+      <default>ddd d MM yyyy</default>
+    </entry>
+    <entry name="rightStripText" type="String">
+      <label>Free text printed on the lower strip of the minute card.</label>
+      <default></default>
+    </entry>
+  </group>
+</kcfg>
