@@ -11,7 +11,10 @@ Plasma 6.7 or newer.
 
 ## Install
 
-Download the `.plasmoid` file from a release, then run:
+Install it from the [KDE Store](https://store.kde.org/p/2367264/) through
+**Add Widgets** → **Get New Widgets…**, or download the `.plasmoid` file from a
+[GitHub release](https://github.com/pruefsumme/plasma-flipclock/releases) and
+run:
 
 ```bash
 kpackagetool6 --type Plasma/Applet --install ./io.github.pruefsumme.flipclock-0.1.0.plasmoid
