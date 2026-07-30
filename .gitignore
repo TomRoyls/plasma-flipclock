@@ -1,0 +1,19 @@
+# Local reference assets — never package or redistribute
+reference/
+
+# Render harness output
+tools/out/
+*.render.png
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store

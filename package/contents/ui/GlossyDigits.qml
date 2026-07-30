@@ -76,7 +76,7 @@ Item {
     }
 
     // ---- the paint: the gloss ramp, spanning THIS flap only, so it restarts at
-    // the crease for free. Stops are measured off the original artwork.
+    // the crease for free. Stops are measured from the reference frame.
     Rectangle {
         id: glossFill
         anchors.fill: parent

@@ -6,8 +6,8 @@ pragma ComponentBehavior: Bound
  * Deliberately free of any org.kde.plasma import, so tools/Snap.qml can load it
  * under a bare qml6 for pixel-diffing. All Plasma coupling lives in main.qml.
  *
- * Everything is laid out in reference units (the original MIUI widget's 996x566
- * space) scaled by `u`. Nothing uses Item.scale: that would rasterise the text
+ * Everything is laid out in reference units (the 996x566 design space) scaled
+ * by `u`. Nothing uses Item.scale: that would rasterise the text
  * once at base size and then magnify it.
  */
 import QtQuick

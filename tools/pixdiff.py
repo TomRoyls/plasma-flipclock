@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-pixdiff.py — measure how close the rendered clock is to the original artwork.
+pixdiff.py — measure how close the rendered clock is to the reference frame.
 
-Rebuilds the reference frame by compositing the extracted MTZ tiles the way
-manifest.xml places them (bg1 at 0,0; flip_up_<d> at y=27 and flip_down_<d> at
+Rebuilds the reference frame by compositing the extracted tiles the way the
+layout places them (bg1 at 0,0; flip_up_<d> at y=27 and flip_down_<d> at
 y=218, at x = 104 / 269 / 568 / 733), then compares it to our render region by
 region.
 
@@ -11,7 +11,7 @@ Both images are flattened over the same solid background first, because the
 weather panel is 50% translucent in both and would otherwise compare unfairly.
 
 The digit regions are reported separately and are NOT part of the pass/fail
-gate: we substitute a libre typeface for HTC's, so a residual there is expected
+gate: we substitute a libre typeface, so a residual there is expected
 and is tracked by tools/fontscore.py instead.
 
 Usage:
@@ -33,7 +33,7 @@ FLATTEN = (128, 128, 128)       # neutral grey; both sides get the same
 # name -> (box, exclude-box-or-None), in reference units.
 #
 # The gated card regions exclude the digit tiles: we substitute a libre typeface
-# for HTC's, so including the glyphs would make the gate unpassable by
+# for the reference typeface, so including the glyphs would make the gate unpassable by
 # construction. Glyph fidelity is measured by tools/fontscore.py instead, and the
 # digit regions below are reported for information only.
 REGIONS = {

@@ -2,9 +2,8 @@
 """
 fontscore.py — pick the digit font for the flip clock, by measurement.
 
-The original HTC digits are a condensed, medium-weight grotesque. We cannot ship
-that typeface, so we ship a libre one chosen to match three measured properties
-of the original glyphs:
+The reference digits are a condensed, medium-weight grotesque. We ship a libre
+typeface chosen to match three measured properties of the reference glyphs:
 
     ink aspect (width/height)  = 0.563
     stroke thickness / height  = 0.130
@@ -22,8 +21,7 @@ It also emits the two calibration constants the QML needs:
 Usage:
     tools/fontscore.py <font-dir> [--ref <clock_2x4-dir>] [--top N]
 
-Reference glyphs are read from the extracted MTZ (never redistributed; this is a
-local analysis step only).
+Reference glyphs are read from local analysis assets only.
 """
 
 import argparse

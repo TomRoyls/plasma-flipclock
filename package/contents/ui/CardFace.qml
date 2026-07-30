@@ -8,7 +8,7 @@ pragma ComponentBehavior: Bound
  *   lower flap  y 202..425   face inset to  4..374 x 202..406
  *
  * The "stacked deck" edge at the top/bottom of each card is reproduced as what
- * the original artwork actually shows: concentric rounded rects, each inset ~2
+ * the measured design shows: concentric rounded rects, each inset ~2
  * units horizontally and offset ~10 vertically, so only a thin band of each one
  * peeks out. Measured band at the card top is 4px white / 6px dark, twice over.
  *

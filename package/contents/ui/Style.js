@@ -3,13 +3,10 @@
 /*
  * Style.js — every geometric and colour constant for the flip clock.
  *
- * All lengths are in REFERENCE UNITS: the coordinate space of the original
- * MIUI widget (screenWidth 1080), whose content box is 996 x 566. Consumers
+ * All lengths are in REFERENCE UNITS: the 996 x 566 design space. Consumers
  * multiply by the unit scalar `u = min(width/996, height/566)`.
  *
- * These numbers were measured from the original artwork with an
- * ffmpeg -> raw RGBA -> pixel-probe pass. They are derived measurements
- * (geometry and colour values), not redistributed art.
+ * These numbers were measured with an ffmpeg -> raw RGBA -> pixel-probe pass.
  */
 
 // ---------------------------------------------------------------- content box
