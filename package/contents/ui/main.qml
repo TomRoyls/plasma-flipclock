@@ -13,6 +13,7 @@ import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.clock
+import org.kde.plasma.plasma5support as Plasma5Support
 import org.kde.kirigami as Kirigami
 
 import "Style.js" as S
@@ -67,6 +68,92 @@ PlasmoidItem {
 
     readonly property string minuteString: pad(clock.dateTime.getMinutes())
 
+    // Plasma5Support is part of a normal Plasma Desktop install. Its weather
+    // engine lets us use the providers distributed by the system without a
+    // dependency on KWeather or an external web API.
+    readonly property string configuredWeatherSource: Plasmoid.configuration.weatherSource.trim()
+    readonly property string discoveredWeatherSource: {
+        for (const source of weather.sources) {
+            if (source.indexOf("|weather|") !== -1)
+                return source
+        }
+        return ""
+    }
+    readonly property string weatherSource: {
+        if (Plasmoid.configuration.weatherUseAutomaticSource
+                && discoveredWeatherSource.length > 0)
+            return discoveredWeatherSource
+        return configuredWeatherSource
+    }
+    // DataSource.valid is not a bindable Qt property in Plasma 6.  Do not use
+    // it in this expression: it would evaluate false at startup and prevent the
+    // weather UI from ever seeing the first provider update.  The revision is
+    // advanced by newData below, which makes this binding reliably reactive.
+    property int weatherRevision: 0
+    readonly property var weatherData: {
+        const revision = weatherRevision
+        return weatherSource.length > 0 ? weather.data[weatherSource] : null
+    }
+
+    function weatherText(field) {
+        if (!weatherData || weatherData[field] === undefined || weatherData[field] === null)
+            return ""
+        return String(weatherData[field])
+    }
+
+    function degreeText(value) {
+        const text = value === undefined || value === null
+                   ? "" : String(value).trim()
+        if (text.length === 0 || text.indexOf("°") !== -1
+                || !/[0-9]/.test(text))
+            return text
+        return text + "°"
+    }
+
+    function shortPlace(value) {
+        const text = value === undefined || value === null
+                   ? "" : String(value).trim()
+        const comma = text.indexOf(",")
+        return comma === -1 ? text : text.substring(0, comma).trim()
+    }
+
+    // The legacy engine's forecast contract is
+    // period|icon|summary|high|low|precipitation. A few ions also publish
+    // convenient top-level high/low fields, so prefer those and fall back to
+    // day zero. Empty slots are significant (for example Tonight has no high).
+    readonly property var weatherToday: weatherText("Short Forecast Day 0").split("|")
+    readonly property string weatherHighRaw: {
+        const direct = weatherText("High Temperature")
+        return direct.length > 0 ? direct
+                                 : (weatherToday.length > 3 ? weatherToday[3] : "")
+    }
+    readonly property string weatherLowRaw: {
+        const direct = weatherText("Low Temperature")
+        return direct.length > 0 ? direct
+                                 : (weatherToday.length > 4 ? weatherToday[4] : "")
+    }
+    readonly property string weatherHigh: degreeText(weatherHighRaw)
+    readonly property string weatherLow: degreeText(weatherLowRaw)
+    readonly property string weatherRange: {
+        if (weatherHigh.length === 0)
+            return weatherLow.length > 0 ? "L: " + weatherLow : ""
+        if (weatherLow.length === 0)
+            return "H: " + weatherHigh
+        return "H: " + weatherHigh + "\nL: " + weatherLow
+    }
+
+    Plasma5Support.DataSource {
+        id: weather
+        engine: "weather"
+        // "ions" reports the locally installed providers. It also keeps the
+        // engine alive so an already-active compatible source can be found.
+        connectedSources: root.weatherSource.length > 0 ? ["ions", root.weatherSource] : ["ions"]
+        interval: 30 * 60 * 1000
+        onNewData: function(sourceName, data) {
+            ++root.weatherRevision
+        }
+    }
+
     fullRepresentation: Item {
         Layout.minimumWidth: Kirigami.Units.gridUnit * 10
         Layout.minimumHeight: Layout.minimumWidth * S.REF_H / S.REF_W
@@ -88,9 +175,25 @@ PlasmoidItem {
                       : ""
             alarmText: Plasmoid.configuration.rightStripText
 
-            // Weather stays blank until the data source lands; the clock is fully
-            // usable without it.
-            hasWeather: false
+            // Show the selected place and a neutral icon immediately. Weather
+            // ions can take a moment to fetch their first update; hiding the
+            // whole lower panel until then makes a successful selection look
+            // indistinguishable from a broken one.
+            hasWeather: Plasmoid.configuration.showWeather
+                        && root.weatherSource.length > 0
+            // Some ions omit Place from otherwise valid weather updates. Keep
+            // the selected location visible instead of rendering a blank slot.
+            wxLocation: root.shortPlace(root.weatherText("Place").length > 0
+                        ? root.weatherText("Place")
+                        : Plasmoid.configuration.weatherLocation)
+            wxCondition: root.weatherText("Current Conditions").length > 0
+                         ? root.weatherText("Current Conditions")
+                         : (root.weatherData ? "" : i18n("Loading weather…"))
+            wxTemperature: root.degreeText(root.weatherText("Temperature"))
+            wxRange: root.weatherRange
+            wxIcon: root.weatherText("Condition Icon")
+            wxVariationKey: Qt.formatDate(clock.dateTime, "yyyy-MM-dd")
+                            + "|" + wxLocation
         }
     }
 }
