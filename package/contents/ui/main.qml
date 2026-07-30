@@ -107,6 +107,17 @@ PlasmoidItem {
         if (text.length === 0 || text.indexOf("°") !== -1
                 || !/[0-9]/.test(text))
             return text
+        // Some ions (notably DWD) expose observations as floating-point
+        // values. Stringifying one directly leaks its binary representation
+        // into the UI (for example 18.79999237060547°). Keep one meaningful
+        // decimal place, matching the forecast values supplied by the engine.
+        const number = Number(value)
+        if (isFinite(number)) {
+            const rounded = Math.round(number * 10) / 10
+            const precision = Math.abs(rounded - Math.round(rounded)) < 0.00001
+                              ? 0 : 1
+            return Qt.locale().toString(rounded, "f", precision) + "°"
+        }
         return text + "°"
     }
 
@@ -132,14 +143,22 @@ PlasmoidItem {
         return direct.length > 0 ? direct
                                  : (weatherToday.length > 4 ? weatherToday[4] : "")
     }
-    readonly property string weatherHigh: degreeText(weatherHighRaw)
-    readonly property string weatherLow: degreeText(weatherLowRaw)
-    readonly property string weatherRange: {
-        if (weatherHigh.length === 0)
-            return weatherLow.length > 0 ? "L: " + weatherLow : ""
-        if (weatherLow.length === 0)
-            return "H: " + weatherHigh
-        return "H: " + weatherHigh + "\nL: " + weatherLow
+    readonly property string weatherHigh: degreeText(weatherHighRaw) || "--"
+    readonly property string weatherLow: degreeText(weatherLowRaw) || "--"
+    readonly property string weatherRange: "H: " + weatherHigh + "\nL: " + weatherLow
+    // Wettercom may publish only its day-zero forecast summary/icon, rather
+    // than a current-observation field. The legacy forecast contract supplies
+    // both, so use it before showing an unavailable placeholder.
+    readonly property string weatherCondition: {
+        const current = weatherText("Current Conditions")
+        return current.length > 0 ? current
+                                  : (weatherToday.length > 2 ? weatherToday[2] : "--")
+    }
+    readonly property string weatherIcon: {
+        const current = weatherText("Condition Icon")
+        return current.length > 0 ? current
+                                  : (weatherToday.length > 1 && weatherToday[1].length > 0
+                                     ? weatherToday[1] : "weather-clear-night")
     }
 
     Plasma5Support.DataSource {
@@ -175,23 +194,20 @@ PlasmoidItem {
                       : ""
             alarmText: Plasmoid.configuration.rightStripText
 
-            // Show the selected place and a neutral icon immediately. Weather
-            // ions can take a moment to fetch their first update; hiding the
-            // whole lower panel until then makes a successful selection look
-            // indistinguishable from a broken one.
+            // Weather remains visible even before a location is selected or a
+            // provider responds. This makes the enabled state explicit and
+            // gives every missing provider field a stable, intentional value.
             hasWeather: Plasmoid.configuration.showWeather
-                        && root.weatherSource.length > 0
             // Some ions omit Place from otherwise valid weather updates. Keep
-            // the selected location visible instead of rendering a blank slot.
+            // the selected location visible instead of rendering a blank slot;
+            // an unconfigured widget gets an equally clear placeholder.
             wxLocation: root.shortPlace(root.weatherText("Place").length > 0
                         ? root.weatherText("Place")
-                        : Plasmoid.configuration.weatherLocation)
-            wxCondition: root.weatherText("Current Conditions").length > 0
-                         ? root.weatherText("Current Conditions")
-                         : (root.weatherData ? "" : i18n("Loading weather…"))
-            wxTemperature: root.degreeText(root.weatherText("Temperature"))
+                        : Plasmoid.configuration.weatherLocation) || i18n("Unknown City")
+            wxCondition: root.weatherCondition
+            wxTemperature: root.degreeText(root.weatherText("Temperature")) || "--"
             wxRange: root.weatherRange
-            wxIcon: root.weatherText("Condition Icon")
+            wxIcon: root.weatherIcon
             wxVariationKey: Qt.formatDate(clock.dateTime, "yyyy-MM-dd")
                             + "|" + wxLocation
         }
