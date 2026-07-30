@@ -3,7 +3,8 @@ pragma ComponentBehavior: Bound
 // Visual check of the flip: rest, mid phase 1 (upper flap falling),
 // and mid phase 2 (lower flap arriving). Angles are driven directly.
 import QtQuick
-import "Style.js" as S
+import "../../package/contents/ui"
+import "../../package/contents/ui/Style.js" as S
 
 Item {
     width: 1200; height: 470

@@ -19,7 +19,7 @@ It also emits the two calibration constants the QML needs:
     FONT_CONDENSE   horizontal squeeze factor     -> Scale { xScale: ... }
 
 Usage:
-    tools/fontscore.py <font-dir> [--ref <clock_2x4-dir>] [--top N]
+    tools/fontscore.py <font-dir> [--ref <clock-dir>] [--top N]
 
 Reference glyphs are read from local analysis assets only.
 """
@@ -235,7 +235,7 @@ def evaluate(family, ref_norm, ref_masks, variations=None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("font_dir")
-    ap.add_argument("--ref", default="reference/mtz-extractor/extracted/HTC/clock_2x4")
+    ap.add_argument("--ref", default="reference/frames/clock")
     ap.add_argument("--top", type=int, default=12)
     ap.add_argument("--weights", default="300,350,400,450,500,550,600",
                     help="wght axis values to sweep on variable fonts")

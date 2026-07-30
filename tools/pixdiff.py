@@ -2,7 +2,7 @@
 """
 pixdiff.py — measure how close the rendered clock is to the reference frame.
 
-Rebuilds the reference frame by compositing the extracted tiles the way the
+Rebuilds the reference frame by compositing the reference tiles the way the
 layout places them (bg1 at 0,0; flip_up_<d> at y=27 and flip_down_<d> at
 y=218, at x = 104 / 269 / 568 / 733), then compares it to our render region by
 region.
@@ -15,7 +15,7 @@ gate: we substitute a libre typeface, so a residual there is expected
 and is tracked by tools/fontscore.py instead.
 
 Usage:
-    tools/pixdiff.py <render.png> [--ref <clock_2x4-dir>] [--time HHMM]
+    tools/pixdiff.py <render.png> [--ref <clock-dir>] [--time HHMM]
                      [--write-ref out.png] [--write-diff out.png]
 """
 
@@ -25,7 +25,7 @@ import subprocess
 import sys
 
 REF_W, REF_H = 996, 566
-TILE_X = (104, 269, 568, 733)   # manifest.xml digit tile origins
+TILE_X = (104, 269, 568, 733)   # digit tile origins in the reference layout
 TILE_UP_Y = 27
 TILE_DOWN_Y = 218
 FLATTEN = (128, 128, 128)       # neutral grey; both sides get the same
@@ -156,7 +156,7 @@ def write_png(path, rgb, w, h):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("render")
-    ap.add_argument("--ref", default="reference/mtz-extractor/extracted/HTC/clock_2x4")
+    ap.add_argument("--ref", default="reference/frames/clock")
     ap.add_argument("--time", default="0738")
     ap.add_argument("--write-ref")
     ap.add_argument("--write-diff")

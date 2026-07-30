@@ -64,8 +64,8 @@ the painting, and it keeps one source of truth per value.
 Not the usual flip-clock design, and easy to get wrong:
 
 - **Two cards, not four digits.** Both hour digits are on one panel, both minute
-  digits on another (`manifest.xml:152-155, 183-188, 215-220`). The hour card
-  flips on the hour; the minute card flips on the minute.
+  digits on another. The hour card flips on the hour; the minute card flips on
+  the minute.
 - **Four layers per card**: static upper = NEW, static lower = OLD, falling upper
   = OLD rotating about its bottom edge, arriving lower = NEW about its top edge.
 - **Two-phase flip, `Easing.OutBounce` on both phases.** 1000 ms hours,
