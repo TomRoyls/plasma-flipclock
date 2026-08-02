@@ -36,6 +36,8 @@ Item {
     property string wxIcon: ""
     property string wxVariationKey: ""
 
+    signal weatherRefreshRequested()
+
     implicitWidth: S.REF_W
     implicitHeight: S.REF_H
 
@@ -227,6 +229,63 @@ Item {
                 font.pixelSize: Math.round(S.WX_RANGE_SIZE * scene.u)
                 lineHeight: 1.0
                 renderType: Text.CurveRendering
+            }
+
+            // Keep the action small and in the panel margin so it reads as a
+            // weather affordance without competing with the clock face.
+            Item {
+                id: refreshButton
+
+                x: S.WX_REFRESH_X * scene.u
+                y: S.WX_REFRESH_Y * scene.u
+                width: S.WX_REFRESH_SIZE * scene.u
+                height: width
+                opacity: refreshMouse.containsMouse
+                         ? S.WX_REFRESH_HOVER_ALPHA
+                         : S.WX_REFRESH_IDLE_ALPHA
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: width / 2
+                    color: Qt.rgba(0, 0, 0, refreshMouse.containsMouse ? 0.26 : 0.12)
+                    border.width: Math.max(1, Math.round(scene.u))
+                    border.color: Qt.rgba(1, 1, 1, refreshMouse.containsMouse ? 0.30 : 0.12)
+                }
+
+                Text {
+                    id: refreshGlyph
+
+                    anchors.centerIn: parent
+                    text: "↻"
+                    color: "white"
+                    font.pixelSize: Math.max(10, Math.round(18 * scene.u))
+                    font.weight: Font.DemiBold
+                    renderType: Text.CurveRendering
+                }
+
+                MouseArea {
+                    id: refreshMouse
+
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+
+                    onClicked: {
+                        scene.weatherRefreshRequested()
+                        refreshAnimation.restart()
+                    }
+                }
+
+                NumberAnimation {
+                    id: refreshAnimation
+
+                    target: refreshGlyph
+                    property: "rotation"
+                    from: 0
+                    to: 360
+                    duration: 520
+                    easing.type: Easing.OutCubic
+                }
             }
         }
     }

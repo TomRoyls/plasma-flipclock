@@ -161,6 +161,17 @@ PlasmoidItem {
                                      ? weatherToday[1] : "weather-clear-night")
     }
 
+    function refreshWeather() {
+        const source = root.weatherSource
+        if (source.length === 0)
+            return
+
+        // Reconnecting a DataEngine source causes the provider to publish its
+        // current data immediately instead of waiting for the 30-minute poll.
+        weather.disconnectSource(source)
+        weather.connectSource(source)
+    }
+
     Plasma5Support.DataSource {
         id: weather
         engine: "weather"
@@ -210,6 +221,8 @@ PlasmoidItem {
             wxIcon: root.weatherIcon
             wxVariationKey: Qt.formatDate(clock.dateTime, "yyyy-MM-dd")
                             + "|" + wxLocation
+
+            onWeatherRefreshRequested: root.refreshWeather()
         }
     }
 }

@@ -180,6 +180,13 @@ var WX_RANGE_X = 940        // right-aligned
 var WX_RANGE_Y = 453
 var WX_RANGE_SIZE = 30
 
+// A quiet control in the panel margin, aligned with the location row.
+var WX_REFRESH_X = 18
+var WX_REFRESH_Y = 458
+var WX_REFRESH_SIZE = 24
+var WX_REFRESH_IDLE_ALPHA = 0.42
+var WX_REFRESH_HOVER_ALPHA = 0.88
+
 // WeatherIcon composes independently cropped textures inside this slot. Its
 // centre is slightly above the text baseline, as in the Sense reference.
 var WX_ICON_CX = 498
