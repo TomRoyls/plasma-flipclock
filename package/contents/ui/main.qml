@@ -21,8 +21,21 @@ import "Style.js" as S
 PlasmoidItem {
     id: root
 
+    // Initial default size only. The desktop containment (via
+    // ContainmentLayoutManager.AppletsLayout + BasicAppletContainer) owns the
+    // actual geometry and persists user resizes in plasma-org.kde.plasma.
+    // desktop-appletsrc under ItemGeometries-<W>x<H>. Size hints flow through
+    // the Layout attached properties on the fullRepresentation below, which the
+    // container reads and binds into its own Layout.preferredWidth/Height.
+    //
+    // Each dimension's binding MUST be independent of the other. The desktop
+    // containment restores saved geometry by re-applying it through the Layout
+    // pathway during startup; a cross-binding like `height: width * ratio` (or
+    // `Layout.preferredHeight: Layout.preferredWidth * ratio`) re-fires when
+    // the paired property is restored and silently clobbers the just-restored
+    // value, snapping the widget back to its default size every restart.
     width: Kirigami.Units.gridUnit * 28
-    height: width * S.REF_H / S.REF_W
+    height: Kirigami.Units.gridUnit * 28 * S.REF_H / S.REF_W
 
     // The widget draws its own skeuomorphic body, so no Plasma frame behind it;
     // ConfigurableBackground still lets the user switch one back on.
@@ -185,10 +198,16 @@ PlasmoidItem {
     }
 
     fullRepresentation: Item {
+        // Independent bindings (see root width/height comment). The desktop
+        // containment reads these Layout attached properties via
+        // BasicAppletContainer to negotiate the widget's size; cross-bindings
+        // here are the more likely restart-reset pathway because the container
+        // binds its own Layout.preferredWidth to max(Layout.minimumWidth,
+        // Layout.preferredWidth) of this item.
         Layout.minimumWidth: Kirigami.Units.gridUnit * 10
-        Layout.minimumHeight: Layout.minimumWidth * S.REF_H / S.REF_W
+        Layout.minimumHeight: Kirigami.Units.gridUnit * 10 * S.REF_H / S.REF_W
         Layout.preferredWidth: Kirigami.Units.gridUnit * 28
-        Layout.preferredHeight: Layout.preferredWidth * S.REF_H / S.REF_W
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 28 * S.REF_H / S.REF_W
 
         FlipClock {
             anchors.fill: parent
