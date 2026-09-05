@@ -21,21 +21,176 @@ import "Style.js" as S
 PlasmoidItem {
     id: root
 
-    // Initial default size only. The desktop containment (via
-    // ContainmentLayoutManager.AppletsLayout + BasicAppletContainer) owns the
-    // actual geometry and persists user resizes in plasma-org.kde.plasma.
-    // desktop-appletsrc under ItemGeometries-<W>x<H>. Size hints flow through
-    // the Layout attached properties on the fullRepresentation below, which the
-    // container reads and binds into its own Layout.preferredWidth/Height.
+    // Initial default size only — the desktop containment owns the actual
+    // geometry and persists user resizes in plasma-org.kde.plasma.desktop-
+    // appletsrc under per-resolution ItemGeometries-<W>x<H> keys.
     //
-    // Each dimension's binding MUST be independent of the other. The desktop
-    // containment restores saved geometry by re-applying it through the Layout
-    // pathway during startup; a cross-binding like `height: width * ratio` (or
-    // `Layout.preferredHeight: Layout.preferredWidth * ratio`) re-fires when
-    // the paired property is restored and silently clobbers the just-restored
-    // value, snapping the widget back to its default size every restart.
-    width: Kirigami.Units.gridUnit * 28
-    height: Kirigami.Units.gridUnit * 28 * S.REF_H / S.REF_W
+    // That keying is the reboot trap: at a cold boot the screen scale factor
+    // can be applied by kscreen only after plasmashell has already read the
+    // layout, so the containment looks up a key from a different logical
+    // resolution, finds nothing, and drops the widget back to its default
+    // size (KDE bugs 413645 / 425368 describe the same class of failure).
+    // A warm plasmashell restart keeps a stable geometry, which is why the
+    // size survives restarts but not reboots.
+    //
+    // Mitigation: remember the last size in the plasmoid's own config, which
+    // is not keyed by resolution, and feed it back as the default here. The
+    // containment's own restore still wins whenever it works because it sizes
+    // the container directly. The gridUnit expression is only evaluated
+    // before the first resize is saved; once a config value exists, QML's
+    // dynamic dependency tracking no longer watches gridUnit, so a late
+    // font-metric change at boot cannot re-fire these bindings and clobber
+    // the restored geometry either.
+    width: Plasmoid.configuration.widgetWidth > 0
+            ? Plasmoid.configuration.widgetWidth
+            : Kirigami.Units.gridUnit * 28
+    height: Plasmoid.configuration.widgetHeight > 0
+             ? Plasmoid.configuration.widgetHeight
+             : Kirigami.Units.gridUnit * 28 * S.REF_H / S.REF_W
+
+    // --- remember user resizes in the applet config -------------------------
+    // The containment resizes the applet root to whatever it lays out, so
+    // watching width/height here records the user's final size.
+    //
+    // Two hazards this code must survive:
+    // 1. The startup window: the containment's restore (and any boot-time
+    //    relayout caused by a late kscreen scale change) lands in the first
+    //    seconds. Changes inside the guard window are observed but not saved;
+    //    when the guard expires the settled size is recorded once.
+    // 2. Corruption feedback: if the boot race resets the widget to the
+    //    pristine default size, blindly saving that value would overwrite the
+    //    remembered good size and make every subsequent boot start from the
+    //    default. A size that matches the default within a few pixels is
+    //    therefore never persisted as a "remembered" size.
+    //
+    // Everything is logged with the FLIPCLOCK: prefix so a failing boot can
+    // be diagnosed from the journal:
+    //   journalctl --user -u plasma-plasmashell.service -b --no-pager | grep FLIPCLOCK
+    readonly property string logTag: "FLIPCLOCK:"
+    readonly property real pristineWidth: Kirigami.Units.gridUnit * 28
+    readonly property real pristineHeight: pristineWidth * S.REF_H / S.REF_W
+    property bool sizeRestoreGuard: true
+    property real lastLoggedW: -1
+    property real lastLoggedH: -1
+
+    function logSize(what) {
+        if (Math.abs(width - lastLoggedW) > 0.5 || Math.abs(height - lastLoggedH) > 0.5) {
+            print(logTag, what + ":",
+                  lastLoggedW.toFixed(1) + "x" + lastLoggedH.toFixed(1),
+                  "->",
+                  width.toFixed(1) + "x" + height.toFixed(1))
+            lastLoggedW = width
+            lastLoggedH = height
+        }
+    }
+
+    Component.onCompleted: {
+        lastLoggedW = width
+        lastLoggedH = height
+        print(logTag, "boot; config:",
+              Plasmoid.configuration.widgetWidth + "x" + Plasmoid.configuration.widgetHeight,
+              "| root:", width.toFixed(1) + "x" + height.toFixed(1),
+              "| gridUnit:", Kirigami.Units.gridUnit)
+    }
+
+    Timer {
+        id: sizeRestoreGuardTimer
+        interval: 15000
+        running: true
+        repeat: false
+        onTriggered: {
+            root.sizeRestoreGuard = false
+            root.logSize("guard expired")
+            root.sizeSelfHeal("guard")
+            sizeSaveTimer.restart()
+        }
+    }
+
+    // The containment sizes the applet root imperatively, which destroys the
+    // declarative width/height bindings. When a boot-time relayout drops the
+    // widget back to the pristine default even though a real user size is
+    // remembered, nothing in the declarative layer can win it back — so this
+    // watchdog re-asserts the remembered size imperatively, at guard expiry
+    // and periodically afterwards. Every heal is logged: on a machine where
+    // the containment keeps resetting the widget, the journal will show the
+    // resets happening (and their timing) even if the re-assert does not
+    // visually stick, which is itself the diagnosis.
+    //
+    // Trade-off: a user who deliberately resizes back to the default and
+    // expects THAT to persist will be snapped to the remembered size again,
+    // because a pristine size is never recorded (see isPristineish). Remove
+    // the remembered size by resetting the widget instead.
+    function sizeSelfHeal(why) {
+        const cw = Plasmoid.configuration.widgetWidth
+        const ch = Plasmoid.configuration.widgetHeight
+        if (cw <= 0 || ch <= 0)
+            return
+        if (!isPristineish(width, height))
+            return
+        if (Math.abs(width - cw) <= 2 && Math.abs(height - ch) <= 2)
+            return
+        print(logTag, "self-heal (" + why + "): default " +
+              width.toFixed(1) + "x" + height.toFixed(1) +
+              " -> remembered " + cw + "x" + ch)
+        width = cw
+        height = ch
+    }
+
+    Timer {
+        id: sizeWatchdogTimer
+        interval: 20000
+        running: false
+        repeat: true
+        triggeredOnStart: false
+        onTriggered: root.sizeSelfHeal("watchdog")
+    }
+
+    // The containment grid-snaps the pristine default (e.g. 504x286 ->
+    // 512x288), so the reset signature must be matched with a tolerance,
+    // not exact equality: a couple of percent or one snap-grid step,
+    // whichever is larger.
+    function isPristineish(w, h) {
+        const tolW = Math.max(8, pristineWidth * 0.02)
+        const tolH = Math.max(8, pristineHeight * 0.02)
+        return Math.abs(w - pristineWidth) <= tolW
+                && Math.abs(h - pristineHeight) <= tolH
+    }
+
+    Timer {
+        id: sizeSaveTimer
+        interval: 800
+        repeat: false
+        onTriggered: {
+            const w = Math.round(root.width)
+            const h = Math.round(root.height)
+            if (w <= 0 || h <= 0)
+                return
+            if (root.isPristineish(root.width, root.height)) {
+                print(root.logTag, "NOT saving: size is the pristine default",
+                      root.pristineWidth.toFixed(1) + "x" + root.pristineHeight.toFixed(1),
+                      "(kept config:",
+                      Plasmoid.configuration.widgetWidth + "x" + Plasmoid.configuration.widgetHeight + ")")
+                return
+            }
+            if (Plasmoid.configuration.widgetWidth !== w
+                    || Plasmoid.configuration.widgetHeight !== h) {
+                print(root.logTag, "saving config:", w + "x" + h)
+                Plasmoid.configuration.widgetWidth = w
+                Plasmoid.configuration.widgetHeight = h
+            }
+        }
+    }
+
+    onWidthChanged: {
+        logSize("resize")
+        if (!sizeRestoreGuard)
+            sizeSaveTimer.restart()
+    }
+    onHeightChanged: {
+        logSize("resize")
+        if (!sizeRestoreGuard)
+            sizeSaveTimer.restart()
+    }
 
     // The widget draws its own skeuomorphic body, so no Plasma frame behind it;
     // ConfigurableBackground still lets the user switch one back on.
@@ -114,6 +269,28 @@ PlasmoidItem {
         return String(weatherData[field])
     }
 
+    // Plasma 6.7's weather engine publishes a structured Forecast object
+    // alongside the legacy flat-string keys. Different ions populate
+    // different parts of the structure: wettercom only provides forecast
+    // (currentDay), BBC only provides observations (lastObservation), and
+    // DWD may provide both or neither depending on the location. Walk a
+    // dot-separated path through the object tree so we can reach whichever
+    // branch the ion actually filled.
+    function weatherNested(path) {
+        if (!weatherData)
+            return ""
+        let val = weatherData
+        for (const part of path.split(".")) {
+            if (val === null || val === undefined)
+                return ""
+            val = val[part]
+        }
+        if (val === undefined || val === null)
+            return ""
+        const s = String(val)
+        return s.length > 0 ? s : ""
+    }
+
     function degreeText(value) {
         const text = value === undefined || value === null
                    ? "" : String(value).trim()
@@ -148,30 +325,53 @@ PlasmoidItem {
     readonly property var weatherToday: weatherText("Short Forecast Day 0").split("|")
     readonly property string weatherHighRaw: {
         const direct = weatherText("High Temperature")
-        return direct.length > 0 ? direct
-                                 : (weatherToday.length > 3 ? weatherToday[3] : "")
+        if (direct.length > 0) return direct
+        const structured = weatherNested("currentDay.normalHighTemp")
+        if (structured.length > 0) return structured
+        const lastDay = weatherNested("lastDay.normalHighTemp")
+        if (lastDay.length > 0) return lastDay
+        return weatherToday.length > 3 ? weatherToday[3] : ""
     }
     readonly property string weatherLowRaw: {
         const direct = weatherText("Low Temperature")
-        return direct.length > 0 ? direct
-                                 : (weatherToday.length > 4 ? weatherToday[4] : "")
+        if (direct.length > 0) return direct
+        const structured = weatherNested("currentDay.normalLowTemp")
+        if (structured.length > 0) return structured
+        const lastDay = weatherNested("lastDay.normalLowTemp")
+        if (lastDay.length > 0) return lastDay
+        return weatherToday.length > 4 ? weatherToday[4] : ""
     }
     readonly property string weatherHigh: degreeText(weatherHighRaw) || "--"
     readonly property string weatherLow: degreeText(weatherLowRaw) || "--"
     readonly property string weatherRange: "H: " + weatherHigh + "\nL: " + weatherLow
+    // Current temperature: ions without an observation endpoint (wettercom)
+    // never populate this. Try the legacy flat key, the structured property,
+    // and finally fall back to today's forecast high — a "best available"
+    // number that is more useful than a bare placeholder.
+    readonly property string weatherTempRaw: {
+        const direct = weatherText("Temperature")
+        if (direct.length > 0) return direct
+        const structured = weatherNested("lastObservation.temperature")
+        if (structured.length > 0) return structured
+        return weatherHighRaw
+    }
     // Wettercom may publish only its day-zero forecast summary/icon, rather
     // than a current-observation field. The legacy forecast contract supplies
     // both, so use it before showing an unavailable placeholder.
     readonly property string weatherCondition: {
         const current = weatherText("Current Conditions")
-        return current.length > 0 ? current
-                                  : (weatherToday.length > 2 ? weatherToday[2] : "--")
+        if (current.length > 0) return current
+        const structured = weatherNested("lastObservation.currentConditions")
+        if (structured.length > 0) return structured
+        return weatherToday.length > 2 ? weatherToday[2] : "--"
     }
     readonly property string weatherIcon: {
         const current = weatherText("Condition Icon")
-        return current.length > 0 ? current
-                                  : (weatherToday.length > 1 && weatherToday[1].length > 0
-                                     ? weatherToday[1] : "weather-clear-night")
+        if (current.length > 0) return current
+        const structured = weatherNested("lastObservation.conditionIcon")
+        if (structured.length > 0) return structured
+        return weatherToday.length > 1 && weatherToday[1].length > 0
+               ? weatherToday[1] : "weather-clear-night"
     }
 
     function refreshWeather() {
@@ -198,16 +398,18 @@ PlasmoidItem {
     }
 
     fullRepresentation: Item {
-        // Independent bindings (see root width/height comment). The desktop
-        // containment reads these Layout attached properties via
-        // BasicAppletContainer to negotiate the widget's size; cross-bindings
-        // here are the more likely restart-reset pathway because the container
-        // binds its own Layout.preferredWidth to max(Layout.minimumWidth,
-        // Layout.preferredWidth) of this item.
+        // Independent, config-driven bindings (see root width/height comment).
+        // The desktop containment reads these as size hints through
+        // BasicAppletContainer when no saved geometry exists. Each dimension
+        // reads its own config key — never the sibling property.
         Layout.minimumWidth: Kirigami.Units.gridUnit * 10
         Layout.minimumHeight: Kirigami.Units.gridUnit * 10 * S.REF_H / S.REF_W
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 28
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 28 * S.REF_H / S.REF_W
+        Layout.preferredWidth: Plasmoid.configuration.widgetWidth > 0
+                ? Plasmoid.configuration.widgetWidth
+                : Kirigami.Units.gridUnit * 28
+        Layout.preferredHeight: Plasmoid.configuration.widgetHeight > 0
+                ? Plasmoid.configuration.widgetHeight
+                : Kirigami.Units.gridUnit * 28 * S.REF_H / S.REF_W
 
         FlipClock {
             anchors.fill: parent
@@ -235,7 +437,7 @@ PlasmoidItem {
                         ? root.weatherText("Place")
                         : Plasmoid.configuration.weatherLocation) || i18n("Unknown City")
             wxCondition: root.weatherCondition
-            wxTemperature: root.degreeText(root.weatherText("Temperature")) || "--"
+            wxTemperature: root.degreeText(root.weatherTempRaw) || "--"
             wxRange: root.weatherRange
             wxIcon: root.weatherIcon
             wxVariationKey: Qt.formatDate(clock.dateTime, "yyyy-MM-dd")

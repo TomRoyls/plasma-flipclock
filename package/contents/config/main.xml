@@ -54,5 +54,13 @@
       <label>Free text printed on the lower strip of the minute card.</label>
       <default></default>
     </entry>
+    <entry name="widgetWidth" type="Int">
+      <label>Last user-chosen width of the desktop widget in logical pixels. Zero until the first resize is remembered.</label>
+      <default>0</default>
+    </entry>
+    <entry name="widgetHeight" type="Int">
+      <label>Last user-chosen height of the desktop widget in logical pixels. Zero until the first resize is remembered.</label>
+      <default>0</default>
+    </entry>
   </group>
 </kcfg>
