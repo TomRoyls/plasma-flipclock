@@ -55,11 +55,11 @@
       <default></default>
     </entry>
     <entry name="widgetWidth" type="Int">
-      <label>Last user-chosen width of the desktop widget in logical pixels. Zero until the first resize is remembered.</label>
+      <label>Last widget width. 0 means use the default.</label>
       <default>0</default>
     </entry>
     <entry name="widgetHeight" type="Int">
-      <label>Last user-chosen height of the desktop widget in logical pixels. Zero until the first resize is remembered.</label>
+      <label>Last widget height. 0 means use the default.</label>
       <default>0</default>
     </entry>
   </group>
